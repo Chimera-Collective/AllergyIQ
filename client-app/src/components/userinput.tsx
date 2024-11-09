@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Textarea } from "@nextui-org/input";
 import { Button } from "@nextui-org/button";
-import { SendHorizontal, Upload, X, Camera } from 'lucide-react'; 
+import { SendHorizontal, Upload, X, Camera } from 'lucide-react';
 import { Camera as CameraPro } from 'react-camera-pro';
+import { Ocr } from './ocr'
 
 // TypeScript interface for the API response structure
 // Defines the expected shape of conflicts and potential errors
@@ -26,10 +27,10 @@ const UserInput: React.FC<UserInputProps> = ({ setApiResponse, setIsLoading }) =
   // State management hooks
   // recipeInput: stores user's text input for ingredients or recipe link
   const [recipeInput, setRecipeInput] = useState<string>("");
-  
+
   // showCamera: toggles camera view for taking photos
   const [showCamera, setShowCamera] = useState<boolean>(false);
-  
+
   // error: stores and displays error messages to the user
   const [error, setError] = useState<string | null>(null);
 
@@ -58,7 +59,7 @@ const UserInput: React.FC<UserInputProps> = ({ setApiResponse, setIsLoading }) =
     // Manage loading state and clear previous errors
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // API call to ingredient analysis endpoint
       const response = await fetch('api-endpoint/analyze', {
@@ -113,34 +114,13 @@ const UserInput: React.FC<UserInputProps> = ({ setApiResponse, setIsLoading }) =
       return;
     }
 
-    // Prepare for API submission
-    setIsLoading(true);
-    setError(null);
+    Ocr(file)
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('image', file);
-
-      // Send image to backend for analysis
-      const response = await fetch('api-endpoint/analyze/image', {
-        method: 'POST',
-        body: formData
-      });
-
-      // Handle non-200 responses
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Parse and set API response
-      const data: ApiResponse = await response.json();
-      setApiResponse(data);
+      console.log('File uploaded:', file);
     } catch (error) {
-      // Error handling
       console.error('Error uploading file:', error);
       setError('Failed to analyze image. Please try again.');
-      setApiResponse(null);
     } finally {
       // Reset loading and file input
       setIsLoading(false);
@@ -154,46 +134,20 @@ const UserInput: React.FC<UserInputProps> = ({ setApiResponse, setIsLoading }) =
   const takePhoto = async () => {
     if (camera.current) {
       try {
-        // Capture photo from camera
-        const photo = camera.current.takePhoto();
-        setIsLoading(true);
         setError(null);
 
-        // Convert base64 photo to blob/file for upload
-        const response = await fetch(photo);
-        const blob = await response.blob();
-        const file = new File([blob], "photo.jpg", { type: "image/jpeg" });
+        // Capture photo from camera
+        const photo = camera.current.takePhoto();
+        console.log('Photo taken:', photo);
 
-        // Prepare FormData for file upload
-        const formData = new FormData();
-        formData.append('image', file);
-
-        // Send photo to backend for analysis
-        const apiResponse = await fetch('api-endpoint/analyze/image', {
-          method: 'POST',
-          body: formData
-        });
-
-        // Handle non-200 responses
-        if (!apiResponse.ok) {
-          throw new Error(`HTTP error! status: ${apiResponse.status}`);
-        }
-
-        // Parse and set API response
-        const data: ApiResponse = await apiResponse.json();
-        setApiResponse(data);
-      } catch (error) {
-        // Error handling
-        console.error('Error:', error);
-        setError('Failed to process photo. Please try again.');
-        setApiResponse(null);
-      } finally {
         // Reset loading and camera view
         setIsLoading(false);
         setShowCamera(false);
+      } catch (error) {
+        setError('Failed to capyure image.');
       }
     }
-  };
+  }
 
   // Render component UI
   // Conditionally renders camera view or text input/upload interface
@@ -204,7 +158,7 @@ const UserInput: React.FC<UserInputProps> = ({ setApiResponse, setIsLoading }) =
         <div className="relative w-[full] h-[300px] rounded-lg overflow-hidden">
           <CameraPro
             ref={camera}
-            aspectRatio={1/1}
+            aspectRatio={1 / 1}
             facingMode="environment"
           />
           <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
@@ -244,7 +198,7 @@ const UserInput: React.FC<UserInputProps> = ({ setApiResponse, setIsLoading }) =
             isInvalid={!!error}
             errorMessage={error}
           />
-          
+
           {/* Action buttons for upload and submit */}
           <div className="flex gap-2 sm:gap-4">
             <Button
@@ -262,10 +216,9 @@ const UserInput: React.FC<UserInputProps> = ({ setApiResponse, setIsLoading }) =
               variant="shadow"
               size="lg"
               onClick={handleSubmit}
-              isLoading={false}
-              endContent={!false && <SendHorizontal size={20} />}
+              isLoading={isLoading}
+              endContent={!isLoading && <SendHorizontal size={20} />}
               className="w-3/4"
-              isDisabled={!recipeInput.trim() && !showCamera}
             >
               Submit
             </Button>
