@@ -4,27 +4,62 @@ import { Button } from "@nextui-org/button";
 import { SendHorizontal, Upload, X, Camera } from 'lucide-react'; 
 import { Camera as CameraPro } from 'react-camera-pro';
 
-const UserInput = () => {
+interface ApiResponse {
+  conflicts: {
+    ingredient: string;
+    allergens: string[];
+    description?: string;
+  }[];
+  error?: string;
+}
+
+interface UserInputProps {
+  setApiResponse: (response: ApiResponse | null) => void;
+  setIsLoading: (loading: boolean) => void;
+}
+
+const UserInput: React.FC<UserInputProps> = ({ setApiResponse, setIsLoading }) => {
   const [recipeInput, setRecipeInput] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showCamera, setShowCamera] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const camera = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleInputChange = (value: string) => {
     setRecipeInput(value);
+    setError(null);
   };
 
   const handleSubmit = async () => {
+    if (!recipeInput.trim()) {
+      setError("Please enter ingredients or a recipe link");
+      return;
+    }
+
     setIsLoading(true);
+    setError(null);
+    
     try {
-      const jsonData = {
-        recipeText: recipeInput
-      };
-      console.log('Data to be sent:', jsonData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('api-endpoint/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: recipeInput
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      setApiResponse(data);
     } catch (error) {
       console.error('Error:', error);
+      setError('Failed to analyze ingredients. Please try again.');
+      setApiResponse(null);
     } finally {
       setIsLoading(false);
     }
@@ -38,18 +73,84 @@ const UserInput = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    // Check file size (e.g., 5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('File is too large. Please upload an image smaller than 5MB');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      console.log('File uploaded:', file);
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('api-endpoint/analyze/image', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      setApiResponse(data);
     } catch (error) {
       console.error('Error uploading file:', error);
+      setError('Failed to analyze image. Please try again.');
+      setApiResponse(null);
+    } finally {
+      setIsLoading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
-  const takePhoto = () => {
+  const takePhoto = async () => {
     if (camera.current) {
-      const photo = camera.current.takePhoto();
-      console.log('Photo taken:', photo);
-      setShowCamera(false);
+      try {
+        const photo = camera.current.takePhoto();
+        setIsLoading(true);
+        setError(null);
+
+        // Convert base64 to blob
+        const response = await fetch(photo);
+        const blob = await response.blob();
+        const file = new File([blob], "photo.jpg", { type: "image/jpeg" });
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const apiResponse = await fetch('api-endpoint/analyze/image', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!apiResponse.ok) {
+          throw new Error(`HTTP error! status: ${apiResponse.status}`);
+        }
+
+        const data: ApiResponse = await apiResponse.json();
+        setApiResponse(data);
+      } catch (error) {
+        console.error('Error:', error);
+        setError('Failed to process photo. Please try again.');
+        setApiResponse(null);
+      } finally {
+        setIsLoading(false);
+        setShowCamera(false);
+      }
     }
   };
 
@@ -94,6 +195,8 @@ const UserInput = () => {
             maxRows={20}
             size="lg"
             variant="bordered"
+            isInvalid={!!error}
+            errorMessage={error}
           />
           
           <div className="flex gap-2 sm:gap-4">
@@ -112,9 +215,10 @@ const UserInput = () => {
               variant="shadow"
               size="lg"
               onClick={handleSubmit}
-              isLoading={isLoading}
-              endContent={!isLoading && <SendHorizontal size={20} />}
+              isLoading={false}
+              endContent={!false && <SendHorizontal size={20} />}
               className="w-3/4"
+              isDisabled={!recipeInput.trim() && !showCamera}
             >
               Submit
             </Button>
