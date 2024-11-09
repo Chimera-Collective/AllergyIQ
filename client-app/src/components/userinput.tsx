@@ -1,14 +1,36 @@
+// src/components/UserInput.tsx
 import React, { useState, useRef } from 'react';
 import { Textarea } from "@nextui-org/input";
 import { Button } from "@nextui-org/button";
-import { SendHorizontal, Upload, X, Camera } from 'lucide-react'; 
+import { SendHorizontal, Upload, X, Camera } from 'lucide-react';
 import { Camera as CameraPro } from 'react-camera-pro';
-import { Ocr } from './ocr'
+import { analyzeImage } from './ImageAnalyzer';
+import OutputResponse from './OutputResponse';
+
+interface VisionApiResponse {
+  responses: Array<{
+    fullTextAnnotation?: {
+      text: string;
+    };
+    textAnnotations?: Array<{
+      description: string;
+      boundingPoly?: {
+        vertices: Array<{
+          x: number;
+          y: number;
+        }>;
+      };
+      locale?: string;
+    }>;
+  }>;
+}
 
 const UserInput = () => {
   const [recipeInput, setRecipeInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showCamera, setShowCamera] = useState<boolean>(false);
+  const [visionResponse, setVisionResponse] = useState<VisionApiResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const camera = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -26,6 +48,7 @@ const UserInput = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.error('Error:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -39,20 +62,64 @@ const UserInput = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    Ocr(file)
+    setIsLoading(true);
+    setError(null);
+    setVisionResponse(null);
 
     try {
-      console.log('File uploaded:', file);
+      await analyzeImage({
+        file,
+        onResult: (response) => {
+          setVisionResponse(response);
+          const extractedText = response.responses[0]?.fullTextAnnotation?.text || '';
+          setRecipeInput(extractedText);
+        },
+        onError: (errorMessage) => {
+          setError(errorMessage);
+          console.error('Error analyzing image:', errorMessage);
+        }
+      });
     } catch (error) {
       console.error('Error uploading file:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const takePhoto = () => {
+  const takePhoto = async () => {
     if (camera.current) {
       const photo = camera.current.takePhoto();
-      console.log('Photo taken:', photo);
       setShowCamera(false);
+      
+      // Convert base64 photo to File object
+      const response = await fetch(photo);
+      const blob = await response.blob();
+      const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+      
+      setIsLoading(true);
+      setError(null);
+      setVisionResponse(null);
+
+      try {
+        await analyzeImage({
+          file,
+          onResult: (response) => {
+            setVisionResponse(response);
+            const extractedText = response.responses[0]?.fullTextAnnotation?.text || '';
+            setRecipeInput(extractedText);
+          },
+          onError: (errorMessage) => {
+            setError(errorMessage);
+            console.error('Error analyzing image:', errorMessage);
+          }
+        });
+      } catch (error) {
+        console.error('Error processing photo:', error);
+        setError(error instanceof Error ? error.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -129,6 +196,12 @@ const UserInput = () => {
             className="hidden"
             accept="image/*"
             onChange={handleFileUpload}
+          />
+
+          <OutputResponse 
+            isLoading={isLoading}
+            response={visionResponse}
+            error={error}
           />
         </>
       )}
