@@ -1,10 +1,15 @@
-const express = require('express');
-const multer = require('multer');
-const axios = require('axios');
-const fs = require('fs');
+import express from 'express';
+import multer from 'multer';
+import axios from 'axios';
+import fs from 'fs';
+import 'dotenv/config';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { databaseQuery } from './mongoDBcall.js';
 
-const app = express();
-const port = 8080;
+/**
+ * Global constants and singletons
+ */
+const PORT = 8080;
 
 // Multer storage configuration for images
 const storage = multer.diskStorage({
@@ -18,7 +23,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+/**
+ * Global configuration
+ */
+const geminiTextToAllergen = await aiTextToJsonParser();
+
 // Middleware to parse JSON in request body
+const app = express();
 app.use(express.json());
 app.use((req, res, next) => {
   console.log('Request Body:', req.body);
@@ -29,9 +40,9 @@ app.use((req, res, next) => {
 });
 
 // Route for processing text
-app.post('/process/text', (req, res) => {
+app.post('/process/text', async (req, res) => {
   const unstructuredText = req.body.text ? req.body.text : '';
-  const itemAllergenList = itemAllergenList;
+  const itemAllergenList = await processText(unstructuredText);
   res.json(itemAllergenList);
 });
 
@@ -68,17 +79,60 @@ app.post('/process/url', (req, res) => {
     });
 });
 
-function geminiTextToAllergen(unstructuredText) {
-  return unstructuredText;
+/**
+ * Gemini AI
+ */
+async function aiTextToJsonParser() {
+  try {
+    const ai = await new GoogleGenerativeAI(process.env.API_KEY_GEMINI);
+    const model = ai.getGenerativeModel(
+      { model: 'gemini-1.5-flash-latest' },
+      {
+        generationConfig: { responseMimeType: 'application/json' },
+      }
+    );
+    return async function (unstructuredText) {
+      const prompt =
+        'Act as a Food Scientist. Return a JSON list, formatted in lowercase. Return values as singular noun, not plural. Return the name of the ingredients. Input text:\n';
+
+      const result = await model.generateContent(prompt + unstructuredText);
+      return JSON.parse(
+        result.response.text().replace('```json', '').replace('```', '')
+      );
+    };
+  } catch (error) {
+    console.error('Error initializing Gemini AI:', error);
+    process.exit(1);
+  }
 }
 
-function mongoLookup(allergenList) {
-  return allergenList;
+async function mongoLookup(allergenList) {
+  const allergenJSON = [];
+  for (const item of allergenList) {
+    const results = await databaseQuery(item);
+    allergenJSON.push(results);
+  }
+
+  const flatAllergens = allergenJSON.flatMap((result) => {
+    // Extract allergens from the nested object
+    const allergens = Object.values(result[0] || {}).flat();
+    return allergens || [];
+  });
+
+  const result = flatAllergens.map((item) => {
+    // Get the second key in the object (i.e. nut, legume, egg, soy)
+    const category = Object.keys(item)[1];
+    return {
+      name: category,
+      ingredients: item[category],
+    };
+  });
+  return result;
 }
 
-function processText(unstructuredText) {
-  const allergenList = geminiTextToAllergen(unstructuredText);
-  const itemAllergenList = mongoLookup(allergenList);
+async function processText(unstructuredText) {
+  const allergenList = await geminiTextToAllergen(unstructuredText);
+  const itemAllergenList = await mongoLookup(allergenList);
   return itemAllergenList;
 }
 
@@ -92,6 +146,6 @@ function processUrlContent(content) {
   return `Processed content: ${content}`;
 }
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
