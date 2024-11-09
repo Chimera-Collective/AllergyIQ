@@ -7,11 +7,30 @@ import { Ocr } from './ocr'
 import OutputResponse from './OutputResponse';
 import axios from 'axios';
 
+interface VisionApiResponse {
+  responses: Array<{
+    fullTextAnnotation?: {
+      text: string;
+    };
+    textAnnotations?: Array<{
+      description: string;
+      boundingPoly?: {
+        vertices: Array<{
+          x: number;
+          y: number;
+        }>;
+      };
+      locale?: string;
+    }>;
+  }>;
+}
+
 const UserInput = () => {
   const [recipeInput, setRecipeInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [outputResponse, setOutputResponse] = useState<any>(null);
   const [showCamera, setShowCamera] = useState<boolean>(false);
+  const [visionResponse, setVisionResponse] = useState<VisionApiResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const camera = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -43,25 +62,67 @@ const UserInput = () => {
     if (!file) return;
 
     setIsLoading(true);
+    setError(null);
+    setVisionResponse(null);
+
+    setIsLoading(true);
     try {
-      const detectedText = await Ocr(file); // Get text from OCR
-      // const response = await axios.post('/process/text', { text: detectedText });
-      // setOutputResponse(response.data); // Set server response
-      console.log("detectedText", detectedText)
-      setOutputResponse("????????????????????????"); // Set server response
+      const detectedText = await Ocr({
+        file,
+        onResult: (response) => {
+          setVisionResponse(response);
+          const extractedText = response.responses[0]?.textAnnotation?.text || '';
+          // const extractedText = response.responses[0]?.fullTextAnnotation?.text || '';
+          setRecipeInput(extractedText);
+          console.log(response)
+        },
+        onError: (errorMessage) => {
+          setError(errorMessage);
+          console.error('Error analyzing image:', errorMessage);
+        }
+      }); // Get text from OCR
+
     } catch (error) {
-      setOutputResponse({ error: 'An error occurred while processing the image.' });
-      console.error('Error processing file:', error);
+      console.error('Error uploading file:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const takePhoto = () => {
+  const takePhoto = async () => {
     if (camera.current) {
       const photo = camera.current.takePhoto();
-      console.log('Photo taken:', photo);
       setShowCamera(false);
+      
+      // Convert base64 photo to File object
+      const response = await fetch(photo);
+      const blob = await response.blob();
+      const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
+      
+      setIsLoading(true);
+      setError(null);
+      setVisionResponse(null);
+
+      try {
+        const photo = await Ocr  ({
+          file,
+          onResult: (response) => {
+            setVisionResponse(response);
+            const extractedText = response.responses[0]?.fullTextAnnotation?.text || '';
+            setRecipeInput(extractedText);
+          },
+          onError: (errorMessage) => {
+            setError(errorMessage);
+            console.error('Error analyzing image:', errorMessage);
+          }
+        });
+      } catch (error) {
+        console.error('Error processing photo:', error);
+        setError(error instanceof Error ? error.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -142,8 +203,8 @@ const UserInput = () => {
 
           <OutputResponse 
             isLoading={isLoading}
-            response={outputResponse}
-            // error={error}
+            response={visionResponse}
+            error={error}
           />
         </>
       )}

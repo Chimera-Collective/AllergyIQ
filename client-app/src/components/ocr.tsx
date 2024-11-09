@@ -1,16 +1,15 @@
 import axios from 'axios';
 
-// interface AnalyzeImageProps {
-//   file: File;
-//   onResult: (response: any) => void;
-//   onError: (error: string) => void;
-// }
+interface AnalyzeImageProps {
+  file: File;
+  onResult: (response: any) => void;
+  onError: (error: string) => void;
+}
 
 const API_KEY = import.meta.env.VITE_GOOGLE_VISION_API_KEY;
-export const Ocr = async (file: File) => {
+export const Ocr = async ({ file, onResult, onError }: AnalyzeImageProps) => {
   try {
     console.log("Handling uploading of OCR", file);
-    console.log("API_KEY:", API_KEY)
 
     // Convert file to Base64
     const base64Image = await fileToBase64(file);
@@ -32,13 +31,15 @@ export const Ocr = async (file: File) => {
     );
 
     // // Extract text from the response
-    const annotations = response.data.responses[0]?.textAnnotations;
-    const detectedText = annotations?.[0]?.description || 'No text detected';
+    // const annotations = response.data.responses[0]?.textAnnotations;
+    // const detectedText = annotations?.[0]?.description || 'No text detected';
 
     // console.log('Detected text:', detectedText);
-    return detectedText;
+    onResult(response.data)
+    return response;
   } catch (error) {
     console.error('Error uploading to Google Vision OCR:', error);
+    onError('Error uploading to Google Vision OCR:')
     throw error;
   }
 };
