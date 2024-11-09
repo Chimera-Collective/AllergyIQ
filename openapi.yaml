@@ -3,6 +3,9 @@ info:
   title: Allergy IQ - OpenAPI 3.0
   version: 0.0.1
 
+servers:
+  - url: http://localhost:8080/
+
 tags:
   - name: ingredient
     description: Everything about food ingredients
@@ -19,8 +22,7 @@ paths:
       tags:
         - process
       summary: Submit an image of ingredients
-      description: ''
-      operationId: uploadFile
+      operationId: postImage
       requestBody:
         content:
           application/octet-stream:
@@ -44,7 +46,7 @@ paths:
       tags:
         - process
       summary: Submit unstructured text of ingredients
-      operationId: inputText
+      operationId: postText
       requestBody:
         content:
           application/json:
@@ -73,7 +75,7 @@ paths:
       tags:
         - process
       summary: Submit the URL of a webpage containing ingrediemts
-      operationId: inputUrl
+      operationId: postUrl
       requestBody:
         content:
           application/json:
