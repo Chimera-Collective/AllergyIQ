@@ -1,13 +1,11 @@
 import axios from 'axios';
-import dotenv from 'dotenv';
-dotenv.config();
 
-const API_KEY = process.env.VITE_GOOGLE_VISION_API_KEY;
-
+const API_KEY = import.meta.env.VITE_GOOGLE_VISION_API_KEY;
 export const Ocr = async (file: File) => {
   try {
     console.log("Handling uploading of OCR", file);
     console.log("API_KEY:", API_KEY)
+
     // Convert file to Base64
     const base64Image = await fileToBase64(file);
     
@@ -27,7 +25,7 @@ export const Ocr = async (file: File) => {
       }
     );
 
-    // Extract text from the response
+    // // Extract text from the response
     const annotations = response.data.responses[0]?.textAnnotations;
     const detectedText = annotations?.[0]?.description || 'No text detected';
 
@@ -39,7 +37,7 @@ export const Ocr = async (file: File) => {
   }
 };
 
-const fileToBase64 = (file: File): Promise<string> => {
+export const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -48,4 +46,4 @@ const fileToBase64 = (file: File): Promise<string> => {
     });
   };
 
-export default Ocr
+export default {Ocr, fileToBase64}

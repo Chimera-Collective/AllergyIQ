@@ -38,7 +38,8 @@ const UserInput = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
+    
+    // console.log(file);
     Ocr(file)
 
     try {
