@@ -1,7 +1,7 @@
 <br />
 <div align="center">
-  <a href="https://github.com/github_username/repo_name">
-    <img src="images/logo.png" alt="Logo" width="500" height="93">
+  <a href="https://github.com/Chimera-Collective/AllergyIQ/tree/16-Ocr-implementation">
+    <img src="readme-assets/logo.png" alt="Logo" width="500" height="93">
   </a>
   <br>
 
@@ -20,6 +20,7 @@
 AllergyIQ bridges the gap between health requirements and cultural dietary practices, making it easier to maintain both without compromise. The application leverages advanced AI technology to provide comprehensive ingredient analysis and allergen detection through multiple input methods.
 
 ### Development Team
+
 - Andy Huynh [ [Github](https://github.com/AH-Huynh942) | [Linkedin](https://www.linkedin.com/in/andy-huynh-5a572791/) ]
 - Bernard Martis [ [Github](https://github.com/bernardm) | [Linkedin](https://www.linkedin.com/in/bernard-martis/) ]
 - Dakota Heizman [ [Github](https://github.com/DakotaH5000) | [Linkedin](https://www.linkedin.com/in/Dakota-Heizman/) ]
@@ -27,34 +28,38 @@ AllergyIQ bridges the gap between health requirements and cultural dietary pract
 
 ### Built With
 
-* [![React][React.js]][React-url]
-* [![Vite][Vite.js]][Vite-url]
-* [![TypeScript][TypeScript.js]][TypeScript-url]
-* [![MongoDB][MongoDB.js]][MongoDB-url]
-* [![Google Cloud][GoogleCloud.js]][GoogleCloud-url]
+- [![React][React.js]][React-url]
+- [![Vite][Vite.js]][Vite-url]
+- [![TypeScript][TypeScript.js]][TypeScript-url]
+- [![MongoDB][MongoDB.js]][MongoDB-url]
+- [![Google Cloud][GoogleCloud.js]][GoogleCloud-url]
 
 ### The Problem We Aim to Solve
+
 AllergyIQ helps users navigate complex dietary needs by simultaneously checking ingredients against both health restrictions and cultural requirements. For example, someone managing diabetes while following Halal guidelines can ensure their meals meet both criteria with a single scan.
 
 #### Health and Cultural Integration
+
 The app helps users navigate complex dietary needs by simultaneously checking ingredients against both health restrictions and cultural requirements. For example, someone managing diabetes while following Halal guidelines can ensure their meals meet both criteria with a single scan.
 
 #### Comprehensive Analysis
+
 The tool evaluates food choices across multiple dimensions:
+
 - **Medical Requirements**: Helps prevent adverse reactions and manage health conditions
 - **Cultural Preferences**: Ensures compliance with religious and cultural dietary laws
 - **Nutritional Balance**: Maintains dietary quality while respecting restrictions
 
 #### Practical Benefits
+
 The app supports better health outcomes by making it easier to follow prescribed dietary guidelines while maintaining cultural traditions. This is particularly valuable since cultural beliefs significantly influence food choices and can impact disease risk management. Users can explore healthy alternatives within their cultural framework, leading to better adherence to both health and cultural requirements.
-
-
 
 ## Getting Started
 
 ### Prerequisites
 
-* npm
+- npm
+
 ```sh
 npm install npm@latest -g
 ```
@@ -62,50 +67,60 @@ npm install npm@latest -g
 ### Installation
 
 1. Get API Keys for:
+
    - Google Gemini API
    - Google Cloud Vision API
    - MongoDB Atlas
 
 2. Clone the repo
+
 ```sh
 git clone https://github.com/your_username/AllergyIQ.git
 ```
 
 3. Install NPM packages
+
 ```sh
 npm install
 ```
 
 4. Configure your environment variables
+
 ```js
-MONGODB_URI=your_mongodb_uri
-GEMINI_API_KEY=your_gemini_key
-CLOUD_VISION_API_KEY=your_vision_key
+MONGODB_URI = your_mongodb_uri;
+GEMINI_API_KEY = your_gemini_key;
+CLOUD_VISION_API_KEY = your_vision_key;
 ```
 
 ## Core Features
 
 ### Multi-Mode Input System
+
 - Text input for ingredient lists
 - URL import for recipe scanning
-- Photo capture for label detection 
+- Photo capture for label detection
 
 ### Intelligent Analysis
+
 - Allergen identification
 - Cultural dietary compliance
-- Real-time risk assessment 
+- Real-time risk assessment
 
 ## Technical Architecture
 
 ### MongoDB Implementation
+
 The database architecture consists of two primary collections:
+
 - Ingredient Analysis Collection
-- Dietary Rules Collection 
+- Dietary Rules Collection
 
 ### AI Integration
+
 The application combines:
+
 - Google Cloud Vision API for OCR
-- Google Gemini API for ingredient analysis 
+- Google Gemini API for ingredient analysis
 
 ## Contributing
 
