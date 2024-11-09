@@ -134,10 +134,6 @@ The application combines:
 
 Distributed under the MIT License. See `LICENSE.txt` for more information.
 
-## Contact
-
-Project Link: [https://github.com/your_username/AllergyIQ](https://github.com/your_username/AllergyIQ)
-
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
 [React-url]: https://reactjs.org/
 [Vite.js]: https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white
