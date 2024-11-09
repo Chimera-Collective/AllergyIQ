@@ -1,5 +1,11 @@
 import axios from 'axios';
 
+// interface AnalyzeImageProps {
+//   file: File;
+//   onResult: (response: any) => void;
+//   onError: (error: string) => void;
+// }
+
 const API_KEY = import.meta.env.VITE_GOOGLE_VISION_API_KEY;
 export const Ocr = async (file: File) => {
   try {
@@ -29,7 +35,7 @@ export const Ocr = async (file: File) => {
     const annotations = response.data.responses[0]?.textAnnotations;
     const detectedText = annotations?.[0]?.description || 'No text detected';
 
-    console.log('Detected text:', detectedText);
+    // console.log('Detected text:', detectedText);
     return detectedText;
   } catch (error) {
     console.error('Error uploading to Google Vision OCR:', error);

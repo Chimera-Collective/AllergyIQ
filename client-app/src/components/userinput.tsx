@@ -4,10 +4,13 @@ import { Button } from "@nextui-org/button";
 import { SendHorizontal, Upload, X, Camera } from 'lucide-react'; 
 import { Camera as CameraPro } from 'react-camera-pro';
 import { Ocr } from './ocr'
+import OutputResponse from './OutputResponse';
+import axios from 'axios';
 
 const UserInput = () => {
   const [recipeInput, setRecipeInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [outputResponse, setOutputResponse] = useState<any>(null);
   const [showCamera, setShowCamera] = useState<boolean>(false);
   const camera = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -38,14 +41,19 @@ const UserInput = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
-    // console.log(file);
-    Ocr(file)
 
+    setIsLoading(true);
     try {
-      console.log('File uploaded:', file);
+      const detectedText = await Ocr(file); // Get text from OCR
+      // const response = await axios.post('/process/text', { text: detectedText });
+      // setOutputResponse(response.data); // Set server response
+      console.log("detectedText", detectedText)
+      setOutputResponse("????????????????????????"); // Set server response
     } catch (error) {
-      console.error('Error uploading file:', error);
+      setOutputResponse({ error: 'An error occurred while processing the image.' });
+      console.error('Error processing file:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -130,6 +138,12 @@ const UserInput = () => {
             className="hidden"
             accept="image/*"
             onChange={handleFileUpload}
+          />
+
+          <OutputResponse 
+            isLoading={isLoading}
+            response={outputResponse}
+            // error={error}
           />
         </>
       )}
