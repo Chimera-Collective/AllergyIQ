@@ -110,8 +110,10 @@ async function mongoLookup(allergenList) {
   const allergenJSON = [];
   for (const item of allergenList) {
     const results = await databaseQuery(item);
-    allergenJSON.push(results);
+    if (results !== undefined){
+    allergenJSON.push(results);}
   }
+
 
   const flatAllergens = allergenJSON.flatMap((result) => {
     // Extract allergens from the nested object
