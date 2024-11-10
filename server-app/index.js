@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import axios from 'axios';
 import fs from 'fs';
+import cors from 'cors';
 import 'dotenv/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { databaseQuery } from './mongoDBcall.js';
@@ -30,6 +31,7 @@ const geminiTextToAllergen = await aiTextToJsonParser();
 
 // Middleware to parse JSON in request body
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use((req, res, next) => {
   console.log('Request Body:', req.body);

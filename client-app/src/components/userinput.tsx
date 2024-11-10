@@ -1,11 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { Textarea } from "@nextui-org/input";
 import { Button } from "@nextui-org/button";
-import { SendHorizontal, Upload, X, Camera } from 'lucide-react'; 
+import { SendHorizontal, Upload, X, Camera } from 'lucide-react';
 import { Camera as CameraPro } from 'react-camera-pro';
 import { Ocr } from './ocr'
 import OutputResponse from './OutputResponse';
 import axios from 'axios';
+
+
+// Set up request to Google Vision API
+console.log( await axios.post(
+  `http://localhost:8080/process/text`,
+  {
+    text: "Ingredients: Water, Fish Stock, Fish (Cod, Haddock, etc.), Potatoes, Carrots, Onions, Celery, Clams, Mussels, Shrimp, Crab, Spices (Salt, Pepper, Bay Leaf, etc.), Thickening Agent (Cornstarch or Flour). Contains: Fish (including Shellfish), Peanuts"
+  }
+))
 
 interface VisionApiResponse {
   responses: Array<{
@@ -94,18 +103,18 @@ const UserInput = () => {
     if (camera.current) {
       const photo = camera.current.takePhoto();
       setShowCamera(false);
-      
+
       // Convert base64 photo to File object
       const response = await fetch(photo);
       const blob = await response.blob();
       const file = new File([blob], "camera-photo.jpg", { type: "image/jpeg" });
-      
+
       setIsLoading(true);
       setError(null);
       setVisionResponse(null);
 
       try {
-        const photo = await Ocr  ({
+        const photo = await Ocr({
           file,
           onResult: (response) => {
             setVisionResponse(response);
@@ -132,7 +141,7 @@ const UserInput = () => {
         <div className="relative w-[full] h-[300px] rounded-lg overflow-hidden">
           <CameraPro
             ref={camera}
-            aspectRatio={1/1}
+            aspectRatio={1 / 1}
             facingMode="environment"
           />
           <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
@@ -168,7 +177,7 @@ const UserInput = () => {
             size="lg"
             variant="bordered"
           />
-          
+
           <div className="flex gap-2 sm:gap-4">
             <Button
               color="secondary"
@@ -201,7 +210,7 @@ const UserInput = () => {
             onChange={handleFileUpload}
           />
 
-          <OutputResponse 
+          <OutputResponse
             isLoading={isLoading}
             response={visionResponse}
             error={error}
