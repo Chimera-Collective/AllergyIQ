@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import axios from 'axios';
 import fs from 'fs';
+import cors from 'cors';
 import 'dotenv/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { databaseQuery } from './mongoDBcall.js';
@@ -30,6 +31,7 @@ const geminiTextToAllergen = await aiTextToJsonParser();
 
 // Middleware to parse JSON in request body
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use((req, res, next) => {
   console.log('Request Body:', req.body);
@@ -107,29 +109,21 @@ async function aiTextToJsonParser() {
 }
 
 async function mongoLookup(allergenList) {
-  const allergenJSON = [];
+  const itemAllergenList = [];
   for (const item of allergenList) {
     const results = await databaseQuery(item);
-    if (results !== undefined){
-    allergenJSON.push(results);}
+    if (results) {
+      const item = results[0][0];
+      delete item._id;
+      const category = Object.keys(item)[0];
+      itemAllergenList.push({
+        name: category,
+        ingredients: item[category],
+      });
+    }
   }
 
-
-  const flatAllergens = allergenJSON.flatMap((result) => {
-    // Extract allergens from the nested object
-    const allergens = Object.values(result[0] || {}).flat();
-    return allergens || [];
-  });
-
-  const result = flatAllergens.map((item) => {
-    // Get the second key in the object (i.e. nut, legume, egg, soy)
-    const category = Object.keys(item)[1];
-    return {
-      name: category,
-      ingredients: item[category],
-    };
-  });
-  return result;
+  return itemAllergenList;
 }
 
 async function processText(unstructuredText) {
